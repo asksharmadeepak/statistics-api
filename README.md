@@ -42,7 +42,7 @@ Running instruction for Docker -
             $ docker build --tag=statistics-api:latest .
     
     5. We are able to run the container from our image:
-            $ docker run -p8887:8888 exchange-rate:latest
+            $ docker run -p8887:8888 statistics-api:latest
 
 Instruction to run :
 
