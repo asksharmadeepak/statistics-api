@@ -32,12 +32,15 @@ public class StatisticsControllerTest {
     @MockBean
     StatisticsService mockStatisticsService;
 
-    CompletableFuture<HttpStatus> eventualResponseEvent;
+
+    CompletableFuture<HttpStatus> eventualResponseEventAccepted;
+    CompletableFuture<HttpStatus> eventualResponseEventPartialContent;
     CompletableFuture<String> eventualResponseStats;
 
     @Before
     public void setUp() {
-        eventualResponseEvent = CompletableFuture.supplyAsync(() -> HttpStatus.ACCEPTED);
+        eventualResponseEventAccepted = CompletableFuture.supplyAsync(() -> HttpStatus.ACCEPTED);
+        eventualResponseEventPartialContent = CompletableFuture.supplyAsync(() -> HttpStatus.PARTIAL_CONTENT);
         eventualResponseStats = CompletableFuture.supplyAsync(() -> "0,0.0,0.0,0.0,0.0");
     }
 
@@ -54,9 +57,20 @@ public class StatisticsControllerTest {
         byte[] byteArray = "1621272364371,0.0442672968,1282509067".getBytes();
         ByteArrayResource resource = new ByteArrayResource(byteArray);
         Mockito.when(mockStatisticsService.createRawDataStatistics(resource)).
-                thenReturn(eventualResponseEvent);
+                thenReturn(eventualResponseEventAccepted);
         RequestBuilder requestBuilder = MockMvcRequestBuilders.post(StatisticsRoutes.EVENT).content(byteArray);
         mockMvc.perform(requestBuilder).andExpect(status().isAccepted());
+        Mockito.verify(mockStatisticsService, times(1)).createRawDataStatistics(resource);
+    }
+
+    @Test
+    public void shouldCreateRawDataStatisticsWithPartialData() throws Exception {
+        byte[] byteArray = "1621272364371,0.04426729689,1282509067".getBytes();
+        ByteArrayResource resource = new ByteArrayResource(byteArray);
+        Mockito.when(mockStatisticsService.createRawDataStatistics(resource)).
+                thenReturn(eventualResponseEventPartialContent);
+        RequestBuilder requestBuilder = MockMvcRequestBuilders.post(StatisticsRoutes.EVENT).content(byteArray);
+        mockMvc.perform(requestBuilder).andExpect(status().isPartialContent());
         Mockito.verify(mockStatisticsService, times(1)).createRawDataStatistics(resource);
     }
 }

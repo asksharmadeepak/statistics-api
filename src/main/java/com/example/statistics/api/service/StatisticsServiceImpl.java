@@ -1,6 +1,6 @@
 package com.example.statistics.api.service;
 
-import com.example.statistics.api.helper.StatisticsInputValidator;
+import com.example.statistics.api.helper.StatisticsRowValidator;
 import com.example.statistics.api.model.Calculation;
 import com.example.statistics.api.model.Statistics;
 import org.slf4j.Logger;
@@ -31,11 +31,11 @@ public class StatisticsServiceImpl implements StatisticsService {
     protected static final Logger LOGGER = LoggerFactory.getLogger(StatisticsServiceImpl.class);
 
     @Autowired
-    public StatisticsServiceImpl(StatisticsInputValidator statisticsInputValidator) {
-        this.statisticsInputValidator = statisticsInputValidator;
+    public StatisticsServiceImpl(StatisticsRowValidator statisticsRowValidator) {
+        this.statisticsRowValidator = statisticsRowValidator;
     }
 
-    StatisticsInputValidator statisticsInputValidator;
+    StatisticsRowValidator statisticsRowValidator;
     List<Statistics> rawDataStatistics;
 
     @Override
@@ -53,11 +53,13 @@ public class StatisticsServiceImpl implements StatisticsService {
     @Async
     public CompletableFuture<String> getStatisticsPayload() {
         Timestamp currentTimestampMinus60Seconds = Timestamp.valueOf(ZonedDateTime.now().toLocalDateTime().minus(60, ChronoUnit.SECONDS));
-        List<Statistics> filteredStatistics = rawDataStatistics.stream().filter(statistics -> currentTimestampMinus60Seconds.getTime() <= statistics.getTimestamp()).collect(Collectors.toList());
-        DoubleSummaryStatistics collectXStats = getCollectStats(filteredStatistics, Statistics::getInputX);
-        DoubleSummaryStatistics collectYStats = getCollectStats(filteredStatistics, Statistics::getInputY);
-        return CompletableFuture.completedFuture(new Calculation(filteredStatistics.size(), collectXStats.getSum(),
-                collectXStats.getAverage(), collectYStats.getSum(), collectYStats.getAverage()).toString());
+        if(rawDataStatistics != null){
+            List<Statistics> filteredStatistics = rawDataStatistics.stream().filter(statistics -> currentTimestampMinus60Seconds.getTime() <= statistics.getTimestamp()).collect(Collectors.toList());
+            DoubleSummaryStatistics collectXStats = getCollectStats(filteredStatistics, Statistics::getInputX);
+            DoubleSummaryStatistics collectYStats = getCollectStats(filteredStatistics, Statistics::getInputY);
+            return CompletableFuture.completedFuture(new Calculation(filteredStatistics.size(), collectXStats.getSum(),
+                    collectXStats.getAverage(), collectYStats.getSum(), collectYStats.getAverage()).toString());
+        }else return CompletableFuture.completedFuture(new Calculation().toString());
     }
 
     private DoubleSummaryStatistics getCollectStats(List<Statistics> filteredStatistics, ToDoubleFunction<Statistics> mapper) {
@@ -73,7 +75,7 @@ public class StatisticsServiceImpl implements StatisticsService {
                     break;
                 else {
                     String[] split = line.split(",");
-                    if (statisticsInputValidator.validateInputRowData(split[1], Integer.parseInt(split[2]))) {
+                    if (statisticsRowValidator.validateInputRowData(split[1], Integer.parseInt(split[2]))) {
                             rawDataStatistics.add(new Statistics(Long.parseLong(split[0]), Double.valueOf(split[1]),
                                     Integer.parseInt(split[2])));
                     } else isValidationFailed = true;

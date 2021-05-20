@@ -1,6 +1,6 @@
 package com.example.statistics.api.service;
 
-import com.example.statistics.api.helper.StatisticsInputValidator;
+import com.example.statistics.api.helper.StatisticsRowValidator;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -22,33 +22,34 @@ import static org.mockito.Mockito.times;
 public class StatisticsServiceImplTest {
 
     @Mock
-    StatisticsInputValidator mockStatisticsInputValidator;
+    StatisticsRowValidator mockStatisticsRowValidator;
 
     @InjectMocks
-    StatisticsService statisticsService = new StatisticsServiceImpl(mockStatisticsInputValidator);
+    StatisticsService statisticsService = new StatisticsServiceImpl(mockStatisticsRowValidator);
 
     CompletableFuture<HttpStatus> eventualResponseEvent;
-
+    ByteArrayResource resource;
     @Before
     public void setUp() {
+        byte[] byteArray = "1621272364371,0.0442672968,1282509067".getBytes();
+        resource = new ByteArrayResource(byteArray);
         eventualResponseEvent = CompletableFuture.supplyAsync(() -> HttpStatus.ACCEPTED);
     }
 
     @Test
     public void shouldCreateRawDataStatistics() throws IOException, ExecutionException, InterruptedException {
-        Mockito.when(mockStatisticsInputValidator.validateInputRowData("0.0442672968", 1282509067))
+        Mockito.when(mockStatisticsRowValidator.validateInputRowData("0.0442672968", 1282509067))
                 .thenReturn(true);
-        byte[] byteArray = "1621272364371,0.0442672968,1282509067".getBytes();
-        ByteArrayResource resource = new ByteArrayResource(byteArray);
         CompletableFuture<HttpStatus> eventualRawDataStatistics = statisticsService.createRawDataStatistics(resource);
         Assert.assertEquals(eventualRawDataStatistics.get(), HttpStatus.ACCEPTED);
-        Mockito.verify(mockStatisticsInputValidator, times(1))
+        Mockito.verify(mockStatisticsRowValidator, times(1))
                 .validateInputRowData("0.0442672968", 1282509067);
     }
 
     @Test
     public void shouldGetStatisticsPayload() throws IOException, ExecutionException, InterruptedException {
+        statisticsService.createRawDataStatistics(resource);
         CompletableFuture<String> eventualStatisticsPayload = statisticsService.getStatisticsPayload();
-        Assert.assertEquals(eventualStatisticsPayload.get(), "INR");
+        Assert.assertEquals(eventualStatisticsPayload.get(), "0,0.0,0.0,0.0,0.0");
     }
 }

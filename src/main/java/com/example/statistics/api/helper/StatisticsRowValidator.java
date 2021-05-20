@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
-public class StatisticsInputValidator {
+public class StatisticsRowValidator {
 
     @Value("${data.start.range}")
     private Integer startRange;
