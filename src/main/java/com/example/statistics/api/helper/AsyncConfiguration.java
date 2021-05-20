@@ -26,5 +26,4 @@ public class AsyncConfiguration {
         executor.initialize();
         return executor;
     }
-
 }

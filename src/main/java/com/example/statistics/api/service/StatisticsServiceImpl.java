@@ -18,33 +18,31 @@ import java.io.InputStreamReader;
 import java.sql.Timestamp;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.DoubleSummaryStatistics;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
 
 @Service
-public class StatisticsUploadServiceImpl implements StatisticsService {
+public class StatisticsServiceImpl implements StatisticsService {
 
-    protected static final Logger LOGGER = LoggerFactory.getLogger(StatisticsUploadServiceImpl.class);
-
-    final StatisticsInputValidator statisticsInputValidator;
+    protected static final Logger LOGGER = LoggerFactory.getLogger(StatisticsServiceImpl.class);
 
     @Autowired
-    public StatisticsUploadServiceImpl(StatisticsInputValidator statisticsInputValidator) {
+    public StatisticsServiceImpl(StatisticsInputValidator statisticsInputValidator) {
         this.statisticsInputValidator = statisticsInputValidator;
     }
 
+    StatisticsInputValidator statisticsInputValidator;
     List<Statistics> rawDataStatistics;
 
     @Override
     @Async
     public CompletableFuture<HttpStatus> createRawDataStatistics(Resource resource) throws IOException {
         InputStream in = resource.getInputStream();
-        rawDataStatistics = Collections.synchronizedList(new ArrayList<>());
+        rawDataStatistics = new CopyOnWriteArrayList();
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
         boolean isRawDataProcessingFailed = readLinesOfRawData(reader);
         reader.close();
@@ -76,10 +74,8 @@ public class StatisticsUploadServiceImpl implements StatisticsService {
                 else {
                     String[] split = line.split(",");
                     if (statisticsInputValidator.validateInputRowData(split[1], Integer.parseInt(split[2]))) {
-                        synchronized (rawDataStatistics) {
                             rawDataStatistics.add(new Statistics(Long.parseLong(split[0]), Double.valueOf(split[1]),
                                     Integer.parseInt(split[2])));
-                        }
                     } else isValidationFailed = true;
                 }
             } catch (NumberFormatException exception) {

@@ -33,30 +33,29 @@ public class StatisticsControllerTest {
     StatisticsService mockStatisticsService;
 
     CompletableFuture<HttpStatus> eventualResponseEvent;
+    CompletableFuture<String> eventualResponseStats;
 
     @Before
     public void setUp() {
         eventualResponseEvent = CompletableFuture.supplyAsync(() -> HttpStatus.ACCEPTED);
-    }
-
-    @Test
-    public void shouldCreateRawDataStatistics() throws Exception {
-        final byte[] byteArray = new byte[0];
-        ByteArrayResource resource = new ByteArrayResource(byteArray);
-        Mockito.when(mockStatisticsService.createRawDataStatistics(resource)).
-                thenReturn(eventualResponseEvent);
-        RequestBuilder requestBuilder = MockMvcRequestBuilders.post(StatisticsRoutes.EVENT).content(byteArray);
-        mockMvc.perform(requestBuilder).andExpect(status().isAccepted());
-        Mockito.verify(mockStatisticsService, times(1)).createRawDataStatistics(resource);
+        eventualResponseStats = CompletableFuture.supplyAsync(() -> "0,0.0,0.0,0.0,0.0");
     }
 
     @Test
     public void shouldGetStatistics() throws Exception {
-        final byte[] byteArray = new byte[0];
+        Mockito.when(mockStatisticsService.getStatisticsPayload()).thenReturn(eventualResponseStats);
+        RequestBuilder requestBuilder = MockMvcRequestBuilders.get(StatisticsRoutes.STATS);
+        mockMvc.perform(requestBuilder).andExpect(status().isOk());
+        Mockito.verify(mockStatisticsService, times(1)).getStatisticsPayload();
+    }
+
+    @Test
+    public void shouldCreateRawDataStatistics() throws Exception {
+        byte[] byteArray = "1621272364371,0.0442672968,1282509067".getBytes();
         ByteArrayResource resource = new ByteArrayResource(byteArray);
         Mockito.when(mockStatisticsService.createRawDataStatistics(resource)).
                 thenReturn(eventualResponseEvent);
-        RequestBuilder requestBuilder = MockMvcRequestBuilders.get(StatisticsRoutes.STATS);
+        RequestBuilder requestBuilder = MockMvcRequestBuilders.post(StatisticsRoutes.EVENT).content(byteArray);
         mockMvc.perform(requestBuilder).andExpect(status().isAccepted());
         Mockito.verify(mockStatisticsService, times(1)).createRawDataStatistics(resource);
     }

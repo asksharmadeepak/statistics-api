@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import static com.example.statistics.api.controller.StatisticsRoutes.EVENT;
 import static com.example.statistics.api.controller.StatisticsRoutes.STATS;
@@ -31,9 +32,9 @@ public class StatisticsController {
     }
 
     @PostMapping(EVENT)
-    public CompletableFuture<HttpStatus> createRawDataStatistics(@RequestBody Resource resource) throws IOException {
+    public ResponseEntity createRawDataStatistics(@RequestBody Resource resource) throws IOException, ExecutionException, InterruptedException {
         LOGGER.info("Request received at controller for row data /event {}");
-        return statisticsService.createRawDataStatistics(resource) ;
+        return new ResponseEntity<>(statisticsService.createRawDataStatistics(resource).get());
     }
 
     @GetMapping(STATS)
